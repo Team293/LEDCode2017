@@ -1,24 +1,13 @@
-#include <TimerOne.h>
+#include <TimerOne.h>   // Timer 1 is also used by the strip to send pixel clocks
 #include "LPD6803.h"
-
-//Example to control LPD6803-based RGB LED Modules in a strand
-// Original code by Bliptronics.com Ben Moyes 2009
-//Use this as you wish, but please give credit, or at least buy some of my LEDs!
-
-// Code cleaned up and Object-ified by ladyada, should be a bit easier to use
 
 /*****************************************************************************/
 
-// Choose which 2 pins you will use for output.
-// Can be any valid output pins.
 int dataPin = 3;       // 'yellow' wire
 int clockPin = 2;      // 'green' wire
-// Don't forget to connect 'blue' to ground and 'red' to +5V
+int pixels = 50;       //number of pixels
 
-// Timer 1 is also used by the strip to send pixel clocks
-
-// Set the first variable to the NUMBER of pixels. 20 = 20 pixels in a row
-LPD6803 strip = LPD6803(6, dataPin, clockPin);
+LPD6803 strip = LPD6803(pixels, dataPin, clockPin);   //defining the LED strip: number of pixels, dataPin, clockPin
 
 void setup() {
   
@@ -30,18 +19,15 @@ void setup() {
   // (Note that the max is 'pessimistic', its probably 10% or 20% less in reality)
   
   strip.setCPUmax(50);  // start with 50% CPU usage. up this if the strand flickers or is slow
-  
-  // Start up the LED counter
-  strip.begin();
-
-  // Update the strip, to start they are all 'off'
-  strip.show();
+  strip.begin();        // Start up the LED counter 
+  strip.show();         // Update the strip, to start they are all 'off'
 }
-int status=0;
 
-/*void loop(){
+int status=0;   
+
+/*void loop(){                                                      // perform different functions when the robot is doing different things
   switch (status) {
-    case 1: colorWipe(Color(63, 0, 0), 50); //standing blue
+    case 1: colorWipe(Color(63, 0, 0), 50); //standing red
     break;
     case 2: colorWipe(Color(0, 63, 0), 50); //driving green
     break;
@@ -62,56 +48,46 @@ int status=0;
 */
 
 void loop() {
-  // Some example procedures showing how to display to the pixels
   
-//  colorWipe(Color(63, 0, 0), 50);
-  colorWipe(Color(0, 63, 0), 50);
-//  colorWipe(Color(0, 0, 63), 50);
+  colorWipe(Color(0, 63, 0), 50, 1, pixels); //color of LED (defined under helper functions), wait, starting pixel, ending pixel
 
-//  rainbow(50);
+//rainbow(50, 1, pixels);
 
-//  rainbowCycle(50);
+//rainbowCycle(50, 1, pixels);
 }
 
-void rainbow(uint8_t wait) {
+void colorWipe(uint16_t c, uint8_t wait, int a, int b) { //changing all pixels from a to b to color 'c'
+  int i;
+    for (i=(a-1); i < (b+1); i++) {                      //pixel numbers begin with 0
+        strip.setPixelColor(i, c);
+        strip.show();
+        delay(wait);
+    }
+}
+
+void rainbow(uint8_t wait, int a, int b) {              // wait, starting pixel, ending pixel
   int i, j;
    
-  for (j=0; j < 96 * 3; j++) {     // 3 cycles of all 96 colors in the wheel
-    for (i=0; i < strip.numPixels(); i++) {
+  for (j=0; j < 96 * 3; j++) {                          // 3 cycles of all 96 colors in the wheel
+    for (i=(a-1); i < (b+1); i++) {                     // create rainbow on all pixels from a to b
       strip.setPixelColor(i, Wheel( (i + j) % 96));
     }  
-    strip.show();   // write all the pixels out
+    strip.show();                                       // write all the pixels out
     delay(wait);
   }
 }
 
-// Slightly different, this one makes the rainbow wheel equally distributed 
-// along the chain
-void rainbowCycle(uint8_t wait) {
+// makes the rainbow wheel equally distributed along the chain
+
+void rainbowCycle(uint8_t wait, int a, int b) { //wait, starting pixel, ending pixel
   int i, j;
   
-  for (j=0; j < 96 * 5; j++) {     // 5 cycles of all 96 colors in the wheel
-    for (i=0; i < strip.numPixels(); i++) {
-      // tricky math! we use each pixel as a fraction of the full 96-color wheel
-      // (thats the i / strip.numPixels() part)
-      // Then add in j which makes the colors go around per pixel
-      // the % 96 is to make the wheel cycle around
-      strip.setPixelColor(i, Wheel( ((i * 96 / strip.numPixels()) + j) % 96) );
-    }  
-    strip.show();   // write all the pixels out
+  for (j=0; j < 96 * 5; j++) {                                                       // 5 cycles of all 96 colors in the wheel
+    for (i=a; i < b+1; i++) {
+        strip.setPixelColor(i, Wheel( ((i * 96 / strip.numPixels()) + j) % 96) );    // use each pixel as a fraction of the full 96-color wheel: i / strip.numPixels()                                                                           
+    }                                                                                // add in j which makes the colors go around per pixel
+    strip.show();   // write all the pixels out                                      // the % 96 is to make the wheel cycle around 
     delay(wait);
-  }
-}
-
-// fill the dots one after the other with said color
-// good for testing purposes
-void colorWipe(uint16_t c, uint8_t wait) {
-  int i;
-  
-  for (i=0; i < strip.numPixels(); i++) {
-      strip.setPixelColor(i, c);
-      strip.show();
-      delay(wait);
   }
 }
 
@@ -121,7 +97,7 @@ void colorWipe(uint16_t c, uint8_t wait) {
 unsigned int Color(byte r, byte g, byte b)
 {
   //Take the lowest 5 bits of each value and append them end to end
-  return( ((unsigned int)g & 0x1F )<<10 | ((unsigned int)b & 0x1F)<<5 | (unsigned int)r & 0x1F);
+  return( ((unsigned int)r & 0x1F )<<10 | ((unsigned int)g & 0x1F)<<5 | (unsigned int)b & 0x1F);
 }
 
 //Input a value 0 to 127 to get a color value.
