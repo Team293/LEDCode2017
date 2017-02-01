@@ -5,12 +5,15 @@
 
 int dataPin = 3;       // 'yellow' wire
 int clockPin = 2;      // 'green' wire
-int pixels = 50;       //number of pixels
+int pixels = 5;       //number of pixels
 
 LPD6803 strip = LPD6803(pixels, dataPin, clockPin);   //defining the LED strip: number of pixels, dataPin, clockPin
+int state=0;   
+int parse=0;
+int mainLedStatus=0;
+int sideLedStatus=0;
 
 void setup() {
-  
   // The Arduino needs to clock out the data to the pixels
   // this happens in interrupt timer 1, we can change how often
   // to call the interrupt. setting CPUmax to 100 will take nearly all all the
@@ -21,45 +24,62 @@ void setup() {
   strip.setCPUmax(50);  // start with 50% CPU usage. up this if the strand flickers or is slow
   strip.begin();        // Start up the LED counter 
   strip.show();         // Update the strip, to start they are all 'off'
+
+  Serial.begin(115200);
 }
 
-int status=0;   
 
-/*void loop(){                                                      // perform different functions when the robot is doing different things
-  switch (status) {
-    case 1: colorWipe(Color(63, 0, 0), 50); //standing red
+void loop(){                                                      // perform different functions when the robot is doing different things\
+ rainbow(5, 0, pixels);   
+  if(state<99){
+    mainLedStatus=state;
+  }
+  if(state>99){
+    sideLedStatus=state-99;
+  }
+ /*switch (mainLedStatus) {
+    //main stripes:
+    case 1: rainbow(50, 1, pixels);                     //idle: rainbow- all pixels
     break;
-    case 2: colorWipe(Color(0, 63, 0), 50); //driving green
+    case 2: colorChase(Color(255,0,0), Color(0,0,0), 50, 1, pixels);  //blue/red chasing (if statement)
     break;
-    case 3: colorWipe(Color(0, 0, 63), 50); //holding gear
+    case 3: colorChase(Color(255, 165, 0), Color(0,0,0), 50, 1, pixels);  //shooting: orange chasing
     break;
-    case 4: colorWipe(Color(63, 0, 0), 50); //feeding
+    case 4: colorWipe(Color(255, 165, 0), 50, 1, pixels);  // feeding: solid orange 
     break;
-    case 5: colorWipe(Color(63, 0, 0), 50); //shooting low
+    case 5: colorWipe(Color(255, 0, 0), 50, 1, pixels);  // low goal: solid red
     break;
-    case 1: colorWipe(Color(63, 0, 0), 50); //shooting high
+    case 6: {
+      colorWipe(Color(255, 255, 0), 50, 1, pixels); // holding a gear: yellow for 5s
+      delay(5000);  
+    }
     break;
-    case 1: colorWipe(Color(63, 0, 0), 50); //climbing
-    break;
-    case 1: colorWipe(Color(63, 0, 0), 50); //15s left
+    case 7: colorWipe(Color(0, 255, 0), 50, 1, pixels);  // lined up for gear: green
     break;
   }
-}
-*/
-
-void loop() {
-  
-  colorWipe(Color(0, 63, 0), 50, 1, pixels); //color of LED (defined under helper functions), wait, starting pixel, ending pixel
-
-//rainbow(50, 1, pixels);
-
-//rainbowCycle(50, 1, pixels);
+  switch(sideLedStatus){
+     //side stripes:
+    case 1: colorWipe(Color(0, 0, 0), 50, 1, pixels);  //driving forward: white
+    break;
+    case 2: colorWipe(Color(255, 0, 255), 50, 1, pixels);  //driving backwards:  purple
+    break;
+  }*/
 }
 
 void colorWipe(uint16_t c, uint8_t wait, int a, int b) { //changing all pixels from a to b to color 'c'
   int i;
     for (i=(a-1); i < (b+1); i++) {                      //pixel numbers begin with 0
         strip.setPixelColor(i, c);
+        strip.show();
+        delay(wait);
+    }
+}
+
+void colorChase(uint16_t c, uint16_t bc, uint8_t wait, int a, int b) { //changing all pixels from a to b to color 'c'
+  int i;
+    for (i=(a-1); i < (b+1); i++) {                      
+        strip.setPixelColor(i, c);
+        strip.setPixelColor((i-1), bc);
         strip.show();
         delay(wait);
     }
